@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Painel Administrativo | Santos Chefia</title>
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Montserrat:wght@500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="admin.css"
+    >
+
+
+    <style>
+
+        .modal-admin-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            z-index: 5000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-admin-overlay.ativo {
+            display: flex;
+        }
+
+        .modal-admin {
+            width: min(720px, 100%);
+            max-height: 90vh;
+            overflow-y: auto;
+            background: #0b0b0b;
+            border: 1px solid rgba(255, 105, 0, 0.25);
+            padding: 28px;
+        }
+
+        .modal-admin-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .modal-admin-top h2 {
+            font-family: "Montserrat", sans-serif;
+            font-size: 24px;
+        }
+
+        .fechar-modal-admin {
+            width: 42px;
+            height: 42px;
+            border: 1px solid #292929;
+            background: transparent;
+            color: #fff;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .form-produto-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .form-produto-full {
+            grid-column: 1 / -1;
+        }
+
+        .form-produto-grid label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #bbb;
+            font-weight: 600;
+        }
+
+        .form-produto-grid input,
+        .form-produto-grid select {
+            width: 100%;
+            height: 48px;
+            border: 1px solid #292929;
+            background: #070707;
+            color: #fff;
+            padding: 0 14px;
+            outline: none;
+        }
+
+        .form-produto-grid input:focus,
+        .form-produto-grid select:focus {
+            border-color: #ff6900;
+        }
+
+        .preview-produto {
+            width: 100%;
+            height: 240px;
+            border: 1px dashed #333;
+            background: #080808;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .preview-produto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .tamanhos-box {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .tamanho-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #292929;
+            padding: 10px 12px;
+            background: #080808;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .tamanho-checkbox:hover {
+            border-color: #ff6900;
+        }
+
+        .tamanho-checkbox input {
+            width: auto;
+            height: auto;
+        }
+
+        .produto-admin-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .produto-admin-sem-imagem {
+            height: 180px;
+            display: grid;
+            place-items: center;
+            background: #101010;
+            font-size: 45px;
+        }
+
+        .mensagem-vazia-produtos {
+            color: #777;
+            text-align: center;
+            padding: 30px 10px;
+        }
+
+        @media (max-width: 650px) {
+
+            .form-produto-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-produto-full {
+                grid-column: auto;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body class="admin-page">
+
+
+    <!-- ==========================================
+         SIDEBAR
+    ========================================== -->
+
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+
+            <img
+                src="../imagens/logo-santos-chefia.jpeg"
+                alt="Santos Chefia"
+            >
+
+            <div>
+
+                <strong>
+                    SANTOS
+                    <span>CHEFIA</span>
+                </strong>
+
+                <small>
+                    Administrativo
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <nav class="sidebar-menu">
+
+            <button
+                class="menu-item ativo"
+                data-section="dashboard"
+                type="button"
+            >
+                <span>🏠</span>
+                Dashboard
+            </button>
+
+
+            <button
+                class="menu-item"
+                data-section="produtos"
+                type="button"
+            >
+                <span>👕</span>
+                Produtos
+            </button>
+
+
+            <button
+                class="menu-item"
+                data-section="pedidos"
+                type="button"
+            >
+                <span>📦</span>
+                Pedidos
+            </button>
+
+
+            <button
+                class="menu-item"
+                data-section="clientes"
+                type="button"
+            >
+                <span>👥</span>
+                Clientes
+            </button>
+
+
+            <button
+                class="menu-item"
+                data-section="configuracoes"
+                type="button"
+            >
+                <span>⚙️</span>
+                Configurações
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <a
+                href="../index.html"
+                target="_blank"
+            >
+                ↗ Ver loja
+            </a>
+
+
+            <button
+                type="button"
+                id="sairAdmin"
+            >
+                Sair
+            </button>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- ==========================================
+         CONTEÚDO
+    ========================================== -->
+
+    <main class="admin-content">
+
+
+        <!-- HEADER -->
+
+        <header class="admin-header">
+
+            <div>
+
+                <p>
+                    PAINEL ADMINISTRATIVO
+                </p>
+
+                <h1 id="tituloPagina">
+                    Dashboard
+                </h1>
+
+            </div>
+
+
+            <div class="admin-user">
+
+                <div class="admin-avatar">
+                    A
+                </div>
+
+                <div>
+
+                    <strong>
+                        Administrador
+                    </strong>
+
+                    <span>
+                        Santos Chefia
+                    </span>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ==========================================
+             DASHBOARD
+        ========================================== -->
+
+        <section
+            id="dashboard"
+            class="admin-section ativa"
+        >
+
+            <div class="welcome-card">
+
+                <div>
+
+                    <p class="admin-kicker">
+                        VISÃO GERAL
+                    </p>
+
+                    <h2>
+                        Bem-vindo ao painel da
+                        <span>Santos Chefia.</span>
+                    </h2>
+
+                    <p>
+                        Acompanhe produtos, pedidos,
+                        clientes e movimentações da loja.
+                    </p>
+
+                </div>
+
+
+                <div class="welcome-icon">
+                    SC
+                </div>
+
+            </div>
+
+
+
+            <div class="stats-grid">
+
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+
+                        <span>
+                            Pedidos
+                        </span>
+
+                        <div class="stat-icon">
+                            📦
+                        </div>
+
+                    </div>
+
+                    <strong>
+                        0
+                    </strong>
+
+                    <p>
+                        Pedidos registrados
+                    </p>
+
+                </article>
+
+
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+
+                        <span>
+                            Faturamento
+                        </span>
+
+                        <div class="stat-icon">
+                            💰
+                        </div>
+
+                    </div>
+
+                    <strong>
+                        R$ 0,00
+                    </strong>
+
+                    <p>
+                        Faturamento registrado
+                    </p>
+
+                </article>
+
+
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+
+                        <span>
+                            Produtos
+                        </span>
+
+                        <div class="stat-icon">
+                            👕
+                        </div>
+
+                    </div>
+
+                    <strong id="dashboardProdutos">
+                        0
+                    </strong>
+
+                    <p>
+                        Produtos cadastrados
+                    </p>
+
+                </article>
+
+
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+
+                        <span>
+                            Clientes
+                        </span>
+
+                        <div class="stat-icon">
+                            👥
+                        </div>
+
+                    </div>
+
+                    <strong>
+                        0
+                    </strong>
+
+                    <p>
+                        Clientes cadastrados
+                    </p>
+
+                </article>
+
+            </div>
+
+
+
+            <div class="dashboard-grid">
+
+
+                <article class="admin-card">
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <p class="admin-kicker">
+                                PEDIDOS
+                            </p>
+
+                            <h3>
+                                Pedidos recentes
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+
+                    <p style="color:#666;">
+                        Ainda não existem pedidos reais cadastrados.
+                    </p>
+
+                </article>
+
+
+
+                <article class="admin-card">
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <p class="admin-kicker">
+                                ACESSOS RÁPIDOS
+                            </p>
+
+                            <h3>
+                                Gerenciar loja
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="quick-actions">
+
+                        <button
+                            type="button"
+                            data-ir="produtos"
+                        >
+                            <span>＋</span>
+                            Cadastrar produto
+                        </button>
+
+
+                        <button
+                            type="button"
+                            data-ir="pedidos"
+                        >
+                            <span>📦</span>
+                            Ver pedidos
+                        </button>
+
+
+                        <button
+                            type="button"
+                            data-ir="clientes"
+                        >
+                            <span>👥</span>
+                            Ver clientes
+                        </button>
+
+
+                        <button
+                            type="button"
+                            data-ir="configuracoes"
+                        >
+                            <span>⚙</span>
+                            Configurações
+                        </button>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==========================================
+             PRODUTOS
+        ========================================== -->
+
+        <section
+            id="produtos"
+            class="admin-section"
+        >
+
+            <div class="section-top">
+
+                <div>
+
+                    <p class="admin-kicker">
+                        CATÁLOGO
+                    </p>
+
+                    <h2>
+                        Produtos
+                    </h2>
+
+                </div>
+
+
+                <button
+                    id="novoProduto"
+                    class="btn-admin-primary"
+                    type="button"
+                >
+                    + NOVO PRODUTO
+                </button>
+
+            </div>
+
+
+            <div class="admin-card">
+
+                <div
+                    id="listaProdutosAdmin"
+                    class="produtos-admin-grid"
+                >
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==========================================
+             PEDIDOS
+        ========================================== -->
+
+        <section
+            id="pedidos"
+            class="admin-section"
+        >
+
+            <div class="section-top">
+
+                <div>
+
+                    <p class="admin-kicker">
+                        VENDAS
+                    </p>
+
+                    <h2>
+                        Pedidos
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="admin-card">
+
+                <p style="color:#666;">
+                    Os pedidos reais serão conectados ao checkout no próximo passo.
+                </p>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==========================================
+             CLIENTES
+        ========================================== -->
+
+        <section
+            id="clientes"
+            class="admin-section"
+        >
+
+            <div class="section-top">
+
+                <div>
+
+                    <p class="admin-kicker">
+                        CLIENTES
+                    </p>
+
+                    <h2>
+                        Clientes
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="admin-card">
+
+                <p style="color:#666;">
+                    Os clientes aparecerão aqui após os pedidos começarem a ser registrados.
+                </p>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==========================================
+             CONFIGURAÇÕES
+        ========================================== -->
+
+        <section
+            id="configuracoes"
+            class="admin-section"
+        >
+
+            <div class="section-top">
+
+                <div>
+
+                    <p class="admin-kicker">
+                        SISTEMA
+                    </p>
+
+                    <h2>
+                        Configurações
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="admin-card">
+
+                <div class="config-grid">
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Nome da loja
+                        </label>
+
+                        <input
+                            type="text"
+                            value="Santos Chefia"
+                        >
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label>
+                            WhatsApp
+                        </label>
+
+                        <input
+                            type="text"
+                            value="(87) 99646-9425"
+                        >
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Instagram
+                        </label>
+
+                        <input
+                            type="text"
+                            value="@santoschefia"
+                        >
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Cidade
+                        </label>
+
+                        <input
+                            type="text"
+                            value="Lajedo - PE"
+                        >
+
+                    </div>
+
+
+
+                    <div class="form-group config-full">
+
+                        <label>
+                            Endereço
+                        </label>
+
+                        <input
+                            type="text"
+                            value="Avenida Governador Paulo Guerra, Lajedo - PE"
+                        >
+
+                    </div>
+
+
+
+                    <div class="config-full">
+
+                        <button
+                            type="button"
+                            class="btn-admin-primary"
+                            id="salvarConfiguracoes"
+                        >
+                            SALVAR ALTERAÇÕES
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- ==========================================
+         MODAL PRODUTO
+    ========================================== -->
+
+    <div
+        id="modalProduto"
+        class="modal-admin-overlay"
+    >
+
+        <div class="modal-admin">
+
+
+            <div class="modal-admin-top">
+
+                <div>
+
+                    <p class="admin-kicker">
+                        PRODUTO
+                    </p>
+
+                    <h2 id="tituloModalProduto">
+                        Novo Produto
+                    </h2>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="fechar-modal-admin"
+                    id="fecharModalProduto"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+
+            <form id="formProduto">
+
+
+                <input
+                    type="hidden"
+                    id="produtoId"
+                >
+
+
+
+                <div class="form-produto-grid">
+
+
+                    <!-- NOME -->
+
+                    <div>
+
+                        <label>
+                            Nome do produto
+                        </label>
+
+                        <input
+                            type="text"
+                            id="produtoNome"
+                            placeholder="Ex: Camiseta Básica Premium"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- CATEGORIA -->
+
+                    <div>
+
+                        <label>
+                            Categoria
+                        </label>
+
+                        <select
+                            id="produtoCategoria"
+                            required
+                        >
+
+                            <option value="">
+                                Selecione uma categoria
+                            </option>
+
+
+                            <option value="Início">
+                                Início
+                            </option>
+
+
+                            <option value="Inverno">
+                                Inverno
+                            </option>
+
+
+                            <option value="Bonés Premium">
+                                Bonés Premium
+                            </option>
+
+
+                            <option value="Camisetas Básicas">
+                                Camisetas Básicas
+                            </option>
+
+
+                            <option value="Camisetas Polo">
+                                Camisetas Polo
+                            </option>
+
+
+                            <option value="Shorts">
+                                Shorts
+                            </option>
+
+
+                            <option value="Calça Jeans">
+                                Calça Jeans
+                            </option>
+
+
+                            <option value="Joias">
+                                Joias
+                            </option>
+
+
+                            <option value="Perfumes">
+                                Perfumes
+                            </option>
+
+
+                            <option value="Carteira">
+                                Carteira
+                            </option>
+
+
+                            <option value="Cueca">
+                                Cueca
+                            </option>
+
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- PREÇO -->
+
+                    <div>
+
+                        <label>
+                            Preço
+                        </label>
+
+                        <input
+                            type="number"
+                            id="produtoPreco"
+                            placeholder="149.90"
+                            step="0.01"
+                            min="0"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- ESTOQUE -->
+
+                    <div>
+
+                        <label>
+                            Estoque
+                        </label>
+
+                        <input
+                            type="number"
+                            id="produtoEstoque"
+                            placeholder="10"
+                            min="0"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- IMAGEM -->
+
+                    <div class="form-produto-full">
+
+                        <label>
+                            Foto do produto
+                        </label>
+
+                        <input
+                            type="file"
+                            id="produtoImagem"
+                            accept="image/*"
+                        >
+
+
+                        <div
+                            id="previewProduto"
+                            class="preview-produto"
+                        >
+                            Nenhuma imagem selecionada
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- TAMANHOS -->
+
+                    <div class="form-produto-full">
+
+                        <label>
+                            Tamanhos disponíveis
+                        </label>
+
+
+                        <div class="tamanhos-box">
+
+
+                            <label class="tamanho-checkbox">
+
+                                <input
+                                    type="checkbox"
+                                    name="produtoTamanho"
+                                    value="P"
+                                >
+
+                                P
+
+                            </label>
+
+
+
+                            <label class="tamanho-checkbox">
+
+                                <input
+                                    type="checkbox"
+                                    name="produtoTamanho"
+                                    value="M"
+                                >
+
+                                M
+
+                            </label>
+
+
+
+                            <label class="tamanho-checkbox">
+
+                                <input
+                                    type="checkbox"
+                                    name="produtoTamanho"
+                                    value="G"
+                                >
+
+                                G
+
+                            </label>
+
+
+
+                            <label class="tamanho-checkbox">
+
+                                <input
+                                    type="checkbox"
+                                    name="produtoTamanho"
+                                    value="GG"
+                                >
+
+                                GG
+
+                            </label>
+
+
+
+                            <label class="tamanho-checkbox">
+
+                                <input
+                                    type="checkbox"
+                                    name="produtoTamanho"
+                                    value="Único"
+                                >
+
+                                Tamanho único
+
+                            </label>
+
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- SALVAR -->
+
+                    <div class="form-produto-full">
+
+                        <button
+                            type="submit"
+                            class="btn-admin-primary"
+                            style="width:100%;"
+                        >
+                            SALVAR PRODUTO
+                        </button>
+
+                    </div>
+
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ==========================================
+         JAVASCRIPT
+    ========================================== -->
+
+    <script src="admin.js"></script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Login Administrativo | Santos Chefia
+    </title>
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Montserrat:wght@500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="admin.css"
+    >
+
+</head>
+
+<body class="login-page">
+
+
+    <main class="login-container">
+
+
+        <section class="login-card">
+
+
+            <div class="login-logo-area">
+
+                <img
+                    src="../imagens/logo-santos-chefia.jpeg"
+                    alt="Santos Chefia"
+                    class="login-logo"
+                >
+
+                <h1>
+                    SANTOS
+                    <span>
+                        CHEFIA
+                    </span>
+                </h1>
+
+                <p>
+                    Painel Administrativo
+                </p>
+
+            </div>
+
+
+            <form
+                id="formLogin"
+                class="login-form"
+            >
+
+
+                <div class="form-group">
+
+                    <label for="usuarioAdmin">
+                        Usuário
+                    </label>
+
+                    <input
+                        type="text"
+                        id="usuarioAdmin"
+                        placeholder="Digite seu usuário"
+                        autocomplete="username"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="senhaAdmin">
+                        Senha
+                    </label>
+
+                    <div class="senha-box">
+
+                        <input
+                            type="password"
+                            id="senhaAdmin"
+                            placeholder="Digite sua senha"
+                            autocomplete="current-password"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            id="mostrarSenha"
+                            class="mostrar-senha"
+                        >
+                            👁
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <p
+                    id="mensagemLogin"
+                    class="mensagem-login"
+                >
+                </p>
+
+
+                <button
+                    type="submit"
+                    class="btn-login"
+                >
+                    ENTRAR NO PAINEL
+                </button>
+
+
+            </form>
+
+
+            <div class="login-voltar">
+
+                <a href="../index.html">
+                    ← Voltar para a loja
+                </a>
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+    <script src="admin.js"></script>
+
+
+</body>
+
+</html>

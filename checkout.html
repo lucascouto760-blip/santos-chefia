@@ -1,0 +1,752 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Finalizar compra | Santos Chefia</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+<body>
+
+
+    <!-- HEADER -->
+
+    <header class="header">
+
+        <div class="container">
+
+            <div class="header-content">
+
+                <a
+                    href="index.html"
+                    class="logo"
+                >
+                    SANTOS <span>CHEFIA</span>
+                </a>
+
+
+                <a
+                    href="index.html"
+                    class="voltar-loja"
+                >
+                    ← Voltar para a loja
+                </a>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- CHECKOUT -->
+
+    <main class="checkout-page">
+
+        <div class="container">
+
+
+            <div class="checkout-header">
+
+                <h1>
+                    Finalizar compra
+                </h1>
+
+                <p>
+                    Preencha seus dados para continuar.
+                </p>
+
+            </div>
+
+
+
+            <div class="checkout-grid">
+
+
+                <!-- DADOS DO CLIENTE -->
+
+                <section class="checkout-form">
+
+
+                    <div class="checkout-card">
+
+
+                        <div class="checkout-card-header">
+
+                            <span class="checkout-number">
+                                1
+                            </span>
+
+
+                            <div>
+
+                                <h2>
+                                    Dados pessoais
+                                </h2>
+
+                                <p>
+                                    Informe seus dados para o pedido.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="form-group">
+
+                            <label for="nomeCliente">
+                                Nome completo
+                            </label>
+
+                            <input
+                                type="text"
+                                id="nomeCliente"
+                                placeholder="Digite seu nome completo"
+                            >
+
+                        </div>
+
+
+
+                        <div class="form-row">
+
+
+                            <div class="form-group">
+
+                                <label for="cpfCliente">
+                                    CPF
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="cpfCliente"
+                                    placeholder="000.000.000-00"
+                                    maxlength="14"
+                                    inputmode="numeric"
+                                >
+
+                            </div>
+
+
+
+                            <div class="form-group">
+
+                                <label for="whatsappCliente">
+                                    WhatsApp
+                                </label>
+
+                                <input
+                                    type="tel"
+                                    id="whatsappCliente"
+                                    placeholder="(87) 99999-9999"
+                                >
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <div class="form-group">
+
+                            <label for="emailCliente">
+                                E-mail
+                            </label>
+
+                            <input
+                                type="email"
+                                id="emailCliente"
+                                placeholder="seuemail@email.com"
+                            >
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- ENDEREÇO -->
+
+                    <div class="checkout-card">
+
+
+                        <div class="checkout-card-header">
+
+                            <span class="checkout-number">
+                                2
+                            </span>
+
+
+                            <div>
+
+                                <h2>
+                                    Endereço de entrega
+                                </h2>
+
+                                <p>
+                                    Para calcular o frete do seu pedido.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="form-row">
+
+
+                            <div class="form-group cep-group">
+
+                                <label for="cepCliente">
+                                    CEP
+                                </label>
+
+
+                                <div class="cep-input">
+
+                                    <input
+                                        type="text"
+                                        id="cepCliente"
+                                        placeholder="00000-000"
+                                        maxlength="9"
+                                        inputmode="numeric"
+                                    >
+
+
+                                    <button
+                                        type="button"
+                                        id="buscarCep"
+                                    >
+                                        Buscar
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <div class="form-group">
+
+                            <label for="ruaCliente">
+                                Rua
+                            </label>
+
+                            <input
+                                type="text"
+                                id="ruaCliente"
+                                placeholder="Nome da rua"
+                            >
+
+                        </div>
+
+
+
+                        <div class="form-row">
+
+
+                            <div class="form-group">
+
+                                <label for="numeroCliente">
+                                    Número
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="numeroCliente"
+                                    placeholder="123"
+                                >
+
+                            </div>
+
+
+
+                            <div class="form-group">
+
+                                <label for="complementoCliente">
+                                    Complemento
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="complementoCliente"
+                                    placeholder="Apartamento, casa..."
+                                >
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <div class="form-row">
+
+
+                            <div class="form-group">
+
+                                <label for="bairroCliente">
+                                    Bairro
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="bairroCliente"
+                                    placeholder="Bairro"
+                                >
+
+                            </div>
+
+
+
+                            <div class="form-group">
+
+                                <label for="cidadeCliente">
+                                    Cidade
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="cidadeCliente"
+                                    placeholder="Cidade"
+                                >
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <div class="form-group">
+
+                            <label for="estadoCliente">
+                                Estado
+                            </label>
+
+                            <input
+                                type="text"
+                                id="estadoCliente"
+                                placeholder="PE"
+                                maxlength="2"
+                            >
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- ENTREGA -->
+
+                    <div class="checkout-card">
+
+
+                        <div class="checkout-card-header">
+
+                            <span class="checkout-number">
+                                3
+                            </span>
+
+
+                            <div>
+
+                                <h2>
+                                    Forma de entrega
+                                </h2>
+
+                                <p>
+                                    Escolha como deseja receber seu pedido.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="entrega-opcoes">
+
+
+                            <label class="entrega-option">
+
+
+                                <input
+                                    type="radio"
+                                    name="entrega"
+                                    value="delivery"
+                                    checked
+                                >
+
+
+                                <div class="entrega-content">
+
+
+                                    <div>
+
+                                        <strong>
+                                            Entrega
+                                        </strong>
+
+                                        <span>
+                                            Calcular frete pelo CEP
+                                        </span>
+
+                                    </div>
+
+
+                                    <strong id="valorFrete">
+                                        A calcular
+                                    </strong>
+
+
+                                </div>
+
+
+                            </label>
+
+
+
+                            <label class="entrega-option">
+
+
+                                <input
+                                    type="radio"
+                                    name="entrega"
+                                    value="retirada"
+                                >
+
+
+                                <div class="entrega-content">
+
+
+                                    <div>
+
+                                        <strong>
+                                            Retirar na loja
+                                        </strong>
+
+                                        <span>
+                                            Avenida Governador Paulo Guerra
+                                        </span>
+
+                                    </div>
+
+
+                                    <strong>
+                                        Grátis
+                                    </strong>
+
+
+                                </div>
+
+
+                            </label>
+
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- PAGAMENTO -->
+
+                    <div class="checkout-card">
+
+
+                        <div class="checkout-card-header">
+
+                            <span class="checkout-number">
+                                4
+                            </span>
+
+
+                            <div>
+
+                                <h2>
+                                    Pagamento
+                                </h2>
+
+                                <p>
+                                    Escolha a forma de pagamento.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="pagamento-opcoes">
+
+
+                            <label class="pagamento-option">
+
+
+                                <input
+                                    type="radio"
+                                    name="pagamento"
+                                    value="pix"
+                                    checked
+                                >
+
+
+                                <div>
+
+                                    <strong>
+                                        Pix
+                                    </strong>
+
+                                    <span>
+                                        Pagamento instantâneo
+                                    </span>
+
+                                </div>
+
+
+                            </label>
+
+
+
+                            <label class="pagamento-option">
+
+
+                                <input
+                                    type="radio"
+                                    name="pagamento"
+                                    value="credito"
+                                >
+
+
+                                <div>
+
+                                    <strong>
+                                        Cartão de crédito
+                                    </strong>
+
+                                    <span>
+                                        Pagamento seguro
+                                    </span>
+
+                                </div>
+
+
+                            </label>
+
+
+
+                            <label class="pagamento-option">
+
+
+                                <input
+                                    type="radio"
+                                    name="pagamento"
+                                    value="debito"
+                                >
+
+
+                                <div>
+
+                                    <strong>
+                                        Cartão de débito
+                                    </strong>
+
+                                    <span>
+                                        Pagamento seguro
+                                    </span>
+
+                                </div>
+
+
+                            </label>
+
+
+
+                            <label class="pagamento-option">
+
+
+                                <input
+                                    type="radio"
+                                    name="pagamento"
+                                    value="dinheiro"
+                                >
+
+
+                                <div>
+
+                                    <strong>
+                                        Dinheiro
+                                    </strong>
+
+                                    <span>
+                                        Pagamento na entrega
+                                    </span>
+
+                                </div>
+
+
+                            </label>
+
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+
+                <!-- RESUMO -->
+
+                <aside class="checkout-resumo">
+
+
+                    <div class="checkout-card resumo-card">
+
+
+                        <h2>
+                            Resumo do pedido
+                        </h2>
+
+
+
+                        <div id="resumoProdutos">
+
+                            <!-- Produtos serão inseridos pelo JavaScript -->
+
+                        </div>
+
+
+
+                        <div class="resumo-linha">
+
+                            <span>
+                                Subtotal
+                            </span>
+
+                            <strong id="resumoSubtotal">
+                                R$ 0,00
+                            </strong>
+
+                        </div>
+
+
+
+                        <div class="resumo-linha">
+
+                            <span>
+                                Frete
+                            </span>
+
+                            <strong id="resumoFrete">
+                                A calcular
+                            </strong>
+
+                        </div>
+
+
+
+                        <div class="resumo-total">
+
+                            <span>
+                                Total
+                            </span>
+
+                            <strong id="resumoTotal">
+                                R$ 0,00
+                            </strong>
+
+                        </div>
+
+
+
+                        <button
+                            type="button"
+                            id="finalizarPedido"
+                            class="btn-finalizar-pedido"
+                        >
+                            Continuar para pagamento
+                        </button>
+
+
+
+                        <div class="checkout-seguranca">
+
+                            <span>
+                                🔒
+                            </span>
+
+                            <p>
+                                Seus dados são protegidos e utilizados
+                                apenas para processar seu pedido.
+                            </p>
+
+                        </div>
+
+
+                    </div>
+
+
+                </aside>
+
+
+            </div>
+
+
+        </div>
+
+    </main>
+
+
+
+    <!-- FOOTER -->
+
+    <footer class="footer">
+
+        <div class="container">
+
+            <p>
+                © 2026 Santos Chefia. Todos os direitos reservados.
+            </p>
+
+        </div>
+
+    </footer>
+
+
+
+    <script src="checkout.js"></script>
+
+
+</body>
+
+</html>
+```
