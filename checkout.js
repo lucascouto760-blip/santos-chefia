@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", function () {
     ========================================== */
 
     const URL_BACKEND =
-        "http://localhost:3000";
+        "https://santos-chefia.onrender.com";
 
 
     /* ==========================================
@@ -263,7 +263,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 cepInput.value =
                     valor;
 
-
                 limparFrete();
 
             }
@@ -313,7 +312,6 @@ document.addEventListener("DOMContentLoaded", function () {
                             "($1) $2"
                         );
 
-
                     valor =
                         valor.replace(
                             /(\d{4})(\d)/,
@@ -329,7 +327,6 @@ document.addEventListener("DOMContentLoaded", function () {
                             /^(\d{2})(\d)/,
                             "($1) $2"
                         );
-
 
                     valor =
                         valor.replace(
@@ -608,7 +605,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         dados.localidade,
                         dados.uf
                     );
-
 
                 }
 
@@ -1033,38 +1029,17 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
 
-            /*
-               A API JÁ RESPONDEU.
-
-               IMPORTANTE:
-               tiramos o estado "Calculando"
-               ANTES de selecionar o primeiro frete.
-            */
-
             calculandoFrete =
                 false;
 
-
-            /*
-               Selecionar automaticamente
-               o frete mais barato.
-            */
 
             selecionarFrete(
                 cotacoesFrete[0]
             );
 
 
-            /*
-               Mostrar todas as opções.
-            */
-
             mostrarOpcoesFrete();
 
-
-            /*
-               Garantia extra de atualização.
-            */
 
             atualizarResumo();
 
@@ -1173,13 +1148,6 @@ document.addEventListener("DOMContentLoaded", function () {
         entregaGratis =
             frete === 0;
 
-
-        /*
-           CORREÇÃO DO BUG:
-
-           se já temos um frete selecionado,
-           o cálculo terminou.
-        */
 
         calculandoFrete =
             false;
@@ -2650,7 +2618,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         ) {
 
                             alert(
-                                "Não foi possível calcular o frete. Confira se o servidor está ligado e tente novamente."
+                                "Não foi possível calcular o frete. Confira sua conexão e tente novamente."
                             );
 
                             return;
