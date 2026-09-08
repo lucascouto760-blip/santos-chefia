@@ -1,7 +1,7 @@
 // ==========================================
 // SANTOS CHEFIA
 // BACKEND
-// ASAAS + MELHOR ENVIO
+// ASAAS + MELHOR ENVIO + SUPABASE
 // ==========================================
 
 const path = require("path");
@@ -12,12 +12,10 @@ const fs = require("fs");
 // .ENV
 // ==========================================
 
-const caminhoEnv =
-    path.resolve(
-        __dirname,
-        ".env"
-    );
-
+const caminhoEnv = path.resolve(
+    __dirname,
+    ".env"
+);
 
 require("dotenv").config({
     path: caminhoEnv,
@@ -29,22 +27,16 @@ require("dotenv").config({
 // DEPENDÊNCIAS
 // ==========================================
 
-const express =
-    require("express");
-
-const cors =
-    require("cors");
-
-const axios =
-    require("axios");
+const express = require("express");
+const cors = require("cors");
+const axios = require("axios");
 
 
 // ==========================================
 // APP
 // ==========================================
 
-const app =
-    express();
+const app = express();
 
 const PORT =
     process.env.PORT || 3000;
@@ -58,26 +50,359 @@ app.use(
     cors()
 );
 
-
 app.use(
-    express.json()
+    express.json({
+        limit: "10mb"
+    })
 );
-
 
 app.use(
     express.urlencoded({
-        extended: true
+        extended: true,
+        limit: "10mb"
     })
 );
 
 
 // ==========================================
-// CONFIGURAÇÕES MELHOR ENVIO
+// CATEGORIAS
+// ==========================================
+
+const CATEGORIAS_SANTOS_CHEFIA = [
+
+    "Início",
+    "Inverno",
+    "Bonés Premium",
+    "Camisetas Básicas",
+    "Camisetas Polo",
+    "Shorts",
+    "Calça Jeans",
+    "Joias",
+    "Perfumes",
+    "Carteira",
+    "Cueca"
+
+];
+
+
+// ==========================================
+// FRETE PADRÃO
+// ==========================================
+
+const DIMENSOES_PADRAO_ROUPA = {
+
+    peso: 0.5,
+    comprimento: 30,
+    largura: 20,
+    altura: 10
+
+};
+
+
+// ==========================================
+// SUPABASE
+// ==========================================
+
+const SUPABASE_URL =
+    process.env.SUPABASE_URL;
+
+const SUPABASE_SERVICE_ROLE_KEY =
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+
+function supabaseConfigurado() {
+
+    return Boolean(
+        SUPABASE_URL
+        &&
+        SUPABASE_SERVICE_ROLE_KEY
+    );
+
+}
+
+
+const supabase = axios.create({
+
+    baseURL:
+        SUPABASE_URL
+            ?
+            `${SUPABASE_URL}/rest/v1`
+            :
+            "http://localhost",
+
+    headers: {
+
+        "Content-Type":
+            "application/json",
+
+        "Accept":
+            "application/json",
+
+        "apikey":
+            SUPABASE_SERVICE_ROLE_KEY || "",
+
+        "Authorization":
+            `Bearer ${SUPABASE_SERVICE_ROLE_KEY || ""}`
+
+    }
+
+});
+
+
+// ==========================================
+// NORMALIZAR PRODUTO DO BANCO
+// ==========================================
+
+function normalizarProdutoBanco(
+    produto
+) {
+
+    return {
+
+        id:
+            String(
+                produto.id ?? ""
+            ),
+
+        nome:
+            produto.nome || "",
+
+        categoria:
+            produto.categoria || "Início",
+
+        preco:
+            Number(
+                produto.preco || 0
+            ),
+
+        estoque:
+            Number(
+                produto.estoque || 0
+            ),
+
+        tamanhos:
+            Array.isArray(
+                produto.tamanhos
+            )
+                ?
+                produto.tamanhos
+                :
+                [],
+
+        imagem:
+            produto.imagem || "",
+
+        frete:
+            produto.frete
+            ||
+            {
+                ...DIMENSOES_PADRAO_ROUPA
+            },
+
+        criadoEm:
+            produto.created_at || null
+
+    };
+
+}
+
+
+// ==========================================
+// VALIDAR PRODUTO
+// ==========================================
+
+function validarProduto(
+    produto
+) {
+
+    const nome =
+        String(
+            produto.nome || ""
+        ).trim();
+
+    const categoria =
+        String(
+            produto.categoria || ""
+        ).trim();
+
+    const preco =
+        Number(
+            produto.preco
+        );
+
+    const estoque =
+        Number(
+            produto.estoque
+        );
+
+    const tamanhos =
+        Array.isArray(
+            produto.tamanhos
+        )
+            ?
+            produto.tamanhos
+            :
+            [];
+
+
+    if (!nome) {
+
+        return {
+            valido: false,
+            mensagem:
+                "Nome do produto não informado."
+        };
+
+    }
+
+
+    if (
+        !CATEGORIAS_SANTOS_CHEFIA.includes(
+            categoria
+        )
+    ) {
+
+        return {
+            valido: false,
+            mensagem:
+                "Categoria inválida."
+        };
+
+    }
+
+
+    if (
+        !Number.isFinite(
+            preco
+        )
+        ||
+        preco <= 0
+    ) {
+
+        return {
+            valido: false,
+            mensagem:
+                "Preço inválido."
+        };
+
+    }
+
+
+    if (
+        !Number.isFinite(
+            estoque
+        )
+        ||
+        estoque < 0
+    ) {
+
+        return {
+            valido: false,
+            mensagem:
+                "Estoque inválido."
+        };
+
+    }
+
+
+    if (
+        tamanhos.length === 0
+    ) {
+
+        return {
+            valido: false,
+            mensagem:
+                "Selecione pelo menos um tamanho."
+        };
+
+    }
+
+
+    return {
+        valido: true
+    };
+
+}
+
+
+// ==========================================
+// OBJETO PARA O BANCO
+// ==========================================
+
+function prepararProdutoBanco(
+    produto,
+    idExistente = null
+) {
+
+    return {
+
+        id:
+            String(
+                idExistente
+                ||
+                produto.id
+                ||
+                Date.now()
+            ),
+
+        nome:
+            String(
+                produto.nome || ""
+            ).trim(),
+
+        categoria:
+            String(
+                produto.categoria || ""
+            ).trim(),
+
+        preco:
+            Number(
+                produto.preco
+            ),
+
+        estoque:
+            Number(
+                produto.estoque
+            ),
+
+        tamanhos:
+            Array.isArray(
+                produto.tamanhos
+            )
+                ?
+                produto.tamanhos.map(
+                    String
+                )
+                :
+                [],
+
+        imagem:
+            produto.imagem
+            ?
+            String(
+                produto.imagem
+            )
+            :
+            null,
+
+        frete:
+            produto.frete
+            ||
+            {
+                ...DIMENSOES_PADRAO_ROUPA
+            }
+
+    };
+
+}
+
+
+// ==========================================
+// MELHOR ENVIO
 // ==========================================
 
 const MELHOR_ENVIO_BASE_URL =
     "https://sandbox.melhorenvio.com.br";
-
 
 const SERVICOS_MELHOR_ENVIO =
     "1,2,3,4";
@@ -89,7 +414,6 @@ function pegarUserAgentMelhorEnvio() {
         process.env.MELHOR_ENVIO_EMAIL
         ||
         "suporte@santoschefia.com.br";
-
 
     return (
         `Santos Chefia (${email})`
@@ -114,59 +438,44 @@ function pegarCepOrigem() {
 
 
 // ==========================================
-// LOG CONFIGURAÇÕES
+// LOG
 // ==========================================
 
 console.log("");
 console.log("==================================");
-console.log("CARREGANDO CONFIGURAÇÕES");
+console.log("SANTOS CHEFIA - CONFIGURAÇÕES");
 console.log("==================================");
 
 console.log(
-    "Arquivo .env:",
-    caminhoEnv
+    "Supabase:",
+    supabaseConfigurado()
+        ?
+        "CARREGADO"
+        :
+        "NÃO CONFIGURADO"
 );
 
 console.log(
-    "Arquivo existe:",
-    fs.existsSync(caminhoEnv)
-        ? "SIM"
-        : "NÃO"
+    "Asaas:",
+    process.env.ASAAS_API_KEY
+        ?
+        "CARREGADO"
+        :
+        "NÃO CONFIGURADO"
 );
 
 console.log(
-    "MELHOR_ENVIO_EMAIL:",
-    process.env.MELHOR_ENVIO_EMAIL
-        ? "CARREGADO"
-        : "NÃO ENCONTRADO"
-);
-
-console.log(
-    "CLIENT ID Melhor Envio:",
-    process.env.MELHOR_ENVIO_CLIENT_ID
-        ? "CARREGADO"
-        : "NÃO ENCONTRADO"
-);
-
-console.log(
-    "CLIENT SECRET Melhor Envio:",
-    process.env.MELHOR_ENVIO_CLIENT_SECRET
-        ? "CARREGADO"
-        : "NÃO ENCONTRADO"
-);
-
-console.log(
-    "TOKEN Melhor Envio:",
+    "Melhor Envio:",
     process.env.MELHOR_ENVIO_TOKEN
-        ? "CARREGADO"
-        : "NÃO ENCONTRADO"
+        ?
+        "CARREGADO"
+        :
+        "NÃO CONFIGURADO"
 );
 
 console.log(
     "CEP origem:",
-    process.env.CEP_ORIGEM
-        ? "CARREGADO"
-        : "NÃO ENCONTRADO"
+    pegarCepOrigem()
 );
 
 console.log(
@@ -182,23 +491,22 @@ console.log("");
 // ASAAS
 // ==========================================
 
-const asaas =
-    axios.create({
+const asaas = axios.create({
 
-        baseURL:
-            "https://api-sandbox.asaas.com/v3",
+    baseURL:
+        "https://api-sandbox.asaas.com/v3",
 
-        headers: {
+    headers: {
 
-            "Content-Type":
-                "application/json",
+        "Content-Type":
+            "application/json",
 
-            access_token:
-                process.env.ASAAS_API_KEY
+        access_token:
+            process.env.ASAAS_API_KEY
 
-        }
+    }
 
-    });
+});
 
 
 // ==========================================
@@ -207,12 +515,14 @@ const asaas =
 
 app.get(
     "/",
-    function (req, res) {
+    function (
+        req,
+        res
+    ) {
 
         res.json({
 
-            sucesso:
-                true,
+            sucesso: true,
 
             mensagem:
                 "Servidor Santos Chefia funcionando.",
@@ -223,7 +533,14 @@ app.get(
                     "sandbox",
 
                 melhorEnvio:
-                    "sandbox"
+                    "sandbox",
+
+                supabase:
+                    supabaseConfigurado()
+                        ?
+                        "conectado"
+                        :
+                        "não configurado"
 
             }
 
@@ -239,62 +556,36 @@ app.get(
 
 app.get(
     "/teste-env",
-    function (req, res) {
+    function (
+        req,
+        res
+    ) {
 
         res.json({
 
-            arquivoEnvExiste:
-                fs.existsSync(
-                    caminhoEnv
-                ),
+            sucesso: true,
 
             asaas:
                 Boolean(
                     process.env.ASAAS_API_KEY
                 ),
 
-            melhorEnvio: {
+            melhorEnvio:
+                Boolean(
+                    process.env.MELHOR_ENVIO_TOKEN
+                ),
 
-                clientId:
+            supabase: {
+
+                url:
                     Boolean(
-                        process.env
-                            .MELHOR_ENVIO_CLIENT_ID
+                        process.env.SUPABASE_URL
                     ),
 
-                clientSecret:
+                serviceRole:
                     Boolean(
                         process.env
-                            .MELHOR_ENVIO_CLIENT_SECRET
-                    ),
-
-                redirectUri:
-                    Boolean(
-                        process.env
-                            .MELHOR_ENVIO_REDIRECT_URI
-                    ),
-
-                email:
-                    Boolean(
-                        process.env
-                            .MELHOR_ENVIO_EMAIL
-                    ),
-
-                cepOrigem:
-                    Boolean(
-                        process.env
-                            .CEP_ORIGEM
-                    ),
-
-                token:
-                    Boolean(
-                        process.env
-                            .MELHOR_ENVIO_TOKEN
-                    ),
-
-                refreshToken:
-                    Boolean(
-                        process.env
-                            .MELHOR_ENVIO_REFRESH_TOKEN
+                            .SUPABASE_SERVICE_ROLE_KEY
                     )
 
             }
@@ -306,12 +597,699 @@ app.get(
 
 
 // ==========================================
+// TESTAR SUPABASE
+// ==========================================
+
+app.get(
+    "/teste-supabase",
+    async function (
+        req,
+        res
+    ) {
+
+        try {
+
+            if (
+                !supabaseConfigurado()
+            ) {
+
+                return res
+                    .status(500)
+                    .json({
+
+                        sucesso: false,
+
+                        mensagem:
+                            "Supabase não configurado."
+
+                    });
+
+            }
+
+
+            const resposta =
+                await supabase.get(
+                    "/produtos?select=id&limit=1"
+                );
+
+
+            res.json({
+
+                sucesso: true,
+
+                mensagem:
+                    "Supabase conectado com sucesso.",
+
+                registros:
+                    Array.isArray(
+                        resposta.data
+                    )
+                        ?
+                        resposta.data.length
+                        :
+                        0
+
+            });
+
+        }
+
+        catch (erro) {
+
+            console.error(
+                "Erro Supabase:",
+                erro.response?.data
+                ||
+                erro.message
+            );
+
+
+            res
+                .status(
+                    erro.response?.status
+                    ||
+                    500
+                )
+                .json({
+
+                    sucesso: false,
+
+                    mensagem:
+                        "Erro ao conectar com Supabase.",
+
+                    erro:
+                        erro.response?.data
+                        ||
+                        erro.message
+
+                });
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// PRODUTOS
+// LISTAR
+// ==========================================
+
+app.get(
+    "/produtos",
+    async function (
+        req,
+        res
+    ) {
+
+        try {
+
+            if (
+                !supabaseConfigurado()
+            ) {
+
+                return res
+                    .status(500)
+                    .json({
+
+                        sucesso: false,
+
+                        mensagem:
+                            "Supabase não configurado."
+
+                    });
+
+            }
+
+
+            const resposta =
+                await supabase.get(
+
+                    "/produtos?select=*&order=created_at.desc"
+
+                );
+
+
+            const produtos =
+                Array.isArray(
+                    resposta.data
+                )
+                    ?
+                    resposta.data.map(
+                        normalizarProdutoBanco
+                    )
+                    :
+                    [];
+
+
+            res.json({
+
+                sucesso: true,
+
+                produtos:
+                    produtos
+
+            });
+
+        }
+
+        catch (erro) {
+
+            console.error(
+                "Erro ao listar produtos:",
+                erro.response?.data
+                ||
+                erro.message
+            );
+
+
+            res
+                .status(
+                    erro.response?.status
+                    ||
+                    500
+                )
+                .json({
+
+                    sucesso: false,
+
+                    mensagem:
+                        "Não foi possível carregar os produtos.",
+
+                    erro:
+                        erro.response?.data
+                        ||
+                        erro.message
+
+                });
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// PRODUTOS
+// BUSCAR UM
+// ==========================================
+
+app.get(
+    "/produtos/:id",
+    async function (
+        req,
+        res
+    ) {
+
+        try {
+
+            const id =
+                String(
+                    req.params.id
+                );
+
+
+            const resposta =
+                await supabase.get(
+
+                    `/produtos?id=eq.${encodeURIComponent(id)}&select=*`
+
+                );
+
+
+            const produto =
+                Array.isArray(
+                    resposta.data
+                )
+                    ?
+                    resposta.data[0]
+                    :
+                    null;
+
+
+            if (!produto) {
+
+                return res
+                    .status(404)
+                    .json({
+
+                        sucesso: false,
+
+                        mensagem:
+                            "Produto não encontrado."
+
+                    });
+
+            }
+
+
+            res.json({
+
+                sucesso: true,
+
+                produto:
+                    normalizarProdutoBanco(
+                        produto
+                    )
+
+            });
+
+        }
+
+        catch (erro) {
+
+            res
+                .status(500)
+                .json({
+
+                    sucesso: false,
+
+                    mensagem:
+                        "Erro ao buscar produto.",
+
+                    erro:
+                        erro.response?.data
+                        ||
+                        erro.message
+
+                });
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// PRODUTOS
+// CADASTRAR
+// ==========================================
+
+app.post(
+    "/produtos",
+    async function (
+        req,
+        res
+    ) {
+
+        try {
+
+            const validacao =
+                validarProduto(
+                    req.body
+                );
+
+
+            if (
+                !validacao.valido
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+
+                        sucesso: false,
+
+                        mensagem:
+                            validacao.mensagem
+
+                    });
+
+            }
+
+
+            const produtoBanco =
+                prepararProdutoBanco(
+                    req.body
+                );
+
+
+            const resposta =
+                await supabase.post(
+
+                    "/produtos",
+
+                    produtoBanco,
+
+                    {
+
+                        headers: {
+
+                            Prefer:
+                                "return=representation"
+
+                        }
+
+                    }
+
+                );
+
+
+            const produto =
+                Array.isArray(
+                    resposta.data
+                )
+                    ?
+                    resposta.data[0]
+                    :
+                    resposta.data;
+
+
+            res
+                .status(201)
+                .json({
+
+                    sucesso: true,
+
+                    mensagem:
+                        "Produto cadastrado com sucesso.",
+
+                    produto:
+                        normalizarProdutoBanco(
+                            produto
+                        )
+
+                });
+
+        }
+
+        catch (erro) {
+
+            console.error(
+                "Erro ao cadastrar produto:",
+                erro.response?.data
+                ||
+                erro.message
+            );
+
+
+            res
+                .status(
+                    erro.response?.status
+                    ||
+                    500
+                )
+                .json({
+
+                    sucesso: false,
+
+                    mensagem:
+                        "Não foi possível cadastrar o produto.",
+
+                    erro:
+                        erro.response?.data
+                        ||
+                        erro.message
+
+                });
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// PRODUTOS
+// ATUALIZAR
+// ==========================================
+
+app.put(
+    "/produtos/:id",
+    async function (
+        req,
+        res
+    ) {
+
+        try {
+
+            const id =
+                String(
+                    req.params.id
+                );
+
+
+            const validacao =
+                validarProduto(
+                    req.body
+                );
+
+
+            if (
+                !validacao.valido
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+
+                        sucesso: false,
+
+                        mensagem:
+                            validacao.mensagem
+
+                    });
+
+            }
+
+
+            const produtoBanco =
+                prepararProdutoBanco(
+                    req.body,
+                    id
+                );
+
+
+            /*
+               O ID NÃO PRECISA SER ALTERADO
+               DURANTE O UPDATE.
+            */
+
+            delete produtoBanco.id;
+
+
+            const resposta =
+                await supabase.patch(
+
+                    `/produtos?id=eq.${encodeURIComponent(id)}`,
+
+                    produtoBanco,
+
+                    {
+
+                        headers: {
+
+                            Prefer:
+                                "return=representation"
+
+                        }
+
+                    }
+
+                );
+
+
+            const produto =
+                Array.isArray(
+                    resposta.data
+                )
+                    ?
+                    resposta.data[0]
+                    :
+                    resposta.data;
+
+
+            if (!produto) {
+
+                return res
+                    .status(404)
+                    .json({
+
+                        sucesso: false,
+
+                        mensagem:
+                            "Produto não encontrado."
+
+                    });
+
+            }
+
+
+            res.json({
+
+                sucesso: true,
+
+                mensagem:
+                    "Produto atualizado com sucesso.",
+
+                produto:
+                    normalizarProdutoBanco(
+                        produto
+                    )
+
+            });
+
+        }
+
+        catch (erro) {
+
+            console.error(
+                "Erro ao atualizar produto:",
+                erro.response?.data
+                ||
+                erro.message
+            );
+
+
+            res
+                .status(
+                    erro.response?.status
+                    ||
+                    500
+                )
+                .json({
+
+                    sucesso: false,
+
+                    mensagem:
+                        "Não foi possível atualizar o produto.",
+
+                    erro:
+                        erro.response?.data
+                        ||
+                        erro.message
+
+                });
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// PRODUTOS
+// EXCLUIR
+// ==========================================
+
+app.delete(
+    "/produtos/:id",
+    async function (
+        req,
+        res
+    ) {
+
+        try {
+
+            const id =
+                String(
+                    req.params.id
+                );
+
+
+            const resposta =
+                await supabase.delete(
+
+                    `/produtos?id=eq.${encodeURIComponent(id)}`,
+
+                    {
+
+                        headers: {
+
+                            Prefer:
+                                "return=representation"
+
+                        }
+
+                    }
+
+                );
+
+
+            const excluidos =
+                Array.isArray(
+                    resposta.data
+                )
+                    ?
+                    resposta.data
+                    :
+                    [];
+
+
+            if (
+                excluidos.length === 0
+            ) {
+
+                return res
+                    .status(404)
+                    .json({
+
+                        sucesso: false,
+
+                        mensagem:
+                            "Produto não encontrado."
+
+                    });
+
+            }
+
+
+            res.json({
+
+                sucesso: true,
+
+                mensagem:
+                    "Produto excluído com sucesso."
+
+            });
+
+        }
+
+        catch (erro) {
+
+            console.error(
+                "Erro ao excluir produto:",
+                erro.response?.data
+                ||
+                erro.message
+            );
+
+
+            res
+                .status(
+                    erro.response?.status
+                    ||
+                    500
+                )
+                .json({
+
+                    sucesso: false,
+
+                    mensagem:
+                        "Não foi possível excluir o produto.",
+
+                    erro:
+                        erro.response?.data
+                        ||
+                        erro.message
+
+                });
+
+        }
+
+    }
+);
+
+
+// ==========================================
 // TESTAR ASAAS
 // ==========================================
 
 app.get(
     "/teste-asaas",
-    async function (req, res) {
+    async function (
+        req,
+        res
+    ) {
 
         try {
 
@@ -323,8 +1301,7 @@ app.get(
 
             res.json({
 
-                sucesso:
-                    true,
+                sucesso: true,
 
                 mensagem:
                     "Conexão com Asaas funcionando.",
@@ -333,7 +1310,6 @@ app.get(
                     resposta.data
 
             });
-
 
         }
 
@@ -351,8 +1327,7 @@ app.get(
                 .status(500)
                 .json({
 
-                    sucesso:
-                        false,
+                    sucesso: false,
 
                     mensagem:
                         "Erro ao conectar com Asaas.",
@@ -376,7 +1351,10 @@ app.get(
 
 app.get(
     "/status-conta",
-    async function (req, res) {
+    async function (
+        req,
+        res
+    ) {
 
         try {
 
@@ -388,14 +1366,12 @@ app.get(
 
             res.json({
 
-                sucesso:
-                    true,
+                sucesso: true,
 
                 status:
                     resposta.data
 
             });
-
 
         }
 
@@ -405,8 +1381,7 @@ app.get(
                 .status(500)
                 .json({
 
-                    sucesso:
-                        false,
+                    sucesso: false,
 
                     erro:
                         erro.response?.data
@@ -473,16 +1448,21 @@ function gerarDataVencimento() {
 
 app.post(
     "/criar-pix",
-    async function (req, res) {
+    async function (
+        req,
+        res
+    ) {
 
         try {
 
             const {
+
                 nome,
                 cpf,
                 email,
                 whatsapp,
                 valor
+
             } = req.body;
 
 
@@ -518,8 +1498,7 @@ app.post(
                     .status(400)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "Nome não informado."
@@ -537,8 +1516,7 @@ app.post(
                     .status(400)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "CPF inválido."
@@ -554,8 +1532,7 @@ app.post(
                     .status(400)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "E-mail não informado."
@@ -575,8 +1552,7 @@ app.post(
                     .status(400)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "Valor inválido."
@@ -588,7 +1564,9 @@ app.post(
 
             const clienteResposta =
                 await asaas.post(
+
                     "/customers",
+
                     {
 
                         name:
@@ -604,6 +1582,7 @@ app.post(
                             whatsappLimpo
 
                     }
+
                 );
 
 
@@ -613,7 +1592,9 @@ app.post(
 
             const pagamentoResposta =
                 await asaas.post(
+
                     "/payments",
+
                     {
 
                         customer:
@@ -635,6 +1616,7 @@ app.post(
                             "Pedido Santos Chefia"
 
                     }
+
                 );
 
 
@@ -644,7 +1626,9 @@ app.post(
 
             const qrCodeResposta =
                 await asaas.get(
+
                     `/payments/${pagamento.id}/pixQrCode`
+
                 );
 
 
@@ -654,8 +1638,7 @@ app.post(
 
             res.json({
 
-                sucesso:
-                    true,
+                sucesso: true,
 
                 cliente: {
 
@@ -695,7 +1678,6 @@ app.post(
 
             });
 
-
         }
 
         catch (erro) {
@@ -716,8 +1698,7 @@ app.post(
                 .status(500)
                 .json({
 
-                    sucesso:
-                        false,
+                    sucesso: false,
 
                     mensagem:
                         "Não foi possível criar o Pix.",
@@ -739,17 +1720,22 @@ app.post(
 
 app.post(
     "/criar-pagamento",
-    async function (req, res) {
+    async function (
+        req,
+        res
+    ) {
 
         try {
 
             const {
+
                 nome,
                 cpf,
                 email,
                 whatsapp,
                 valor,
                 formaPagamento
+
             } = req.body;
 
 
@@ -771,8 +1757,7 @@ app.post(
                     .status(400)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "CPF inválido."
@@ -787,7 +1772,7 @@ app.post(
 
             if (
                 formaPagamento ===
-                    "pix"
+                "pix"
             ) {
 
                 billingType =
@@ -797,7 +1782,7 @@ app.post(
 
             else if (
                 formaPagamento ===
-                    "credito"
+                "credito"
             ) {
 
                 billingType =
@@ -811,8 +1796,7 @@ app.post(
                     .status(400)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "Forma de pagamento não suportada."
@@ -824,7 +1808,9 @@ app.post(
 
             const clienteResposta =
                 await asaas.post(
+
                     "/customers",
+
                     {
 
                         name:
@@ -846,6 +1832,7 @@ app.post(
                                 )
 
                     }
+
                 );
 
 
@@ -855,7 +1842,9 @@ app.post(
 
             const pagamentoResposta =
                 await asaas.post(
+
                     "/payments",
+
                     {
 
                         customer:
@@ -876,19 +1865,18 @@ app.post(
                             "Pedido Santos Chefia"
 
                     }
+
                 );
 
 
             res.json({
 
-                sucesso:
-                    true,
+                sucesso: true,
 
                 pagamento:
                     pagamentoResposta.data
 
             });
-
 
         }
 
@@ -898,8 +1886,7 @@ app.post(
                 .status(500)
                 .json({
 
-                    sucesso:
-                        false,
+                    sucesso: false,
 
                     mensagem:
                         "Não foi possível criar o pagamento.",
@@ -927,64 +1914,34 @@ function verificarMelhorEnvio() {
         [];
 
 
-    if (
-        !process.env
-            .MELHOR_ENVIO_CLIENT_ID
-    ) {
+    const variaveis = [
 
-        faltando.push(
-            "MELHOR_ENVIO_CLIENT_ID"
-        );
+        "MELHOR_ENVIO_CLIENT_ID",
+        "MELHOR_ENVIO_CLIENT_SECRET",
+        "MELHOR_ENVIO_REDIRECT_URI",
+        "MELHOR_ENVIO_EMAIL",
+        "CEP_ORIGEM"
 
-    }
-
-
-    if (
-        !process.env
-            .MELHOR_ENVIO_CLIENT_SECRET
-    ) {
-
-        faltando.push(
-            "MELHOR_ENVIO_CLIENT_SECRET"
-        );
-
-    }
+    ];
 
 
-    if (
-        !process.env
-            .MELHOR_ENVIO_REDIRECT_URI
-    ) {
+    variaveis.forEach(
+        function (
+            variavel
+        ) {
 
-        faltando.push(
-            "MELHOR_ENVIO_REDIRECT_URI"
-        );
+            if (
+                !process.env[variavel]
+            ) {
 
-    }
+                faltando.push(
+                    variavel
+                );
 
+            }
 
-    if (
-        !process.env
-            .MELHOR_ENVIO_EMAIL
-    ) {
-
-        faltando.push(
-            "MELHOR_ENVIO_EMAIL"
-        );
-
-    }
-
-
-    if (
-        !process.env
-            .CEP_ORIGEM
-    ) {
-
-        faltando.push(
-            "CEP_ORIGEM"
-        );
-
-    }
+        }
+    );
 
 
     return faltando;
@@ -1129,9 +2086,7 @@ function extrairCode(
                 );
 
 
-            if (
-                codeUrl
-            ) {
+            if (codeUrl) {
 
                 code =
                     codeUrl;
@@ -1176,7 +2131,10 @@ function extrairCode(
 
 app.get(
     "/melhor-envio/autorizar",
-    function (req, res) {
+    function (
+        req,
+        res
+    ) {
 
         const faltando =
             verificarMelhorEnvio();
@@ -1199,11 +2157,7 @@ app.get(
                         "
                     >
 
-                        <h1
-                            style="
-                                color:#ff6900;
-                            "
-                        >
+                        <h1>
                             Configuração incompleta
                         </h1>
 
@@ -1228,11 +2182,6 @@ ${faltando.join("\n")}
 
                 <meta charset="UTF-8">
 
-                <meta
-                    name="viewport"
-                    content="width=device-width, initial-scale=1.0"
-                >
-
                 <title>
                     Melhor Envio
                 </title>
@@ -1248,11 +2197,7 @@ ${faltando.join("\n")}
                 "
             >
 
-                <h1
-                    style="
-                        color:#ff6900;
-                    "
-                >
+                <h1>
                     Melhor Envio
                 </h1>
 
@@ -1275,13 +2220,6 @@ ${faltando.join("\n")}
 
                     <button
                         type="submit"
-                        style="
-                            padding:15px 30px;
-                            background:#ff6900;
-                            border:0;
-                            font-weight:bold;
-                            cursor:pointer;
-                        "
                     >
                         GERAR TOKEN
                     </button>
@@ -1299,12 +2237,15 @@ ${faltando.join("\n")}
 
 
 // ==========================================
-// GERAR TOKEN
+// GERAR TOKEN MELHOR ENVIO
 // ==========================================
 
 app.post(
     "/melhor-envio/token",
-    async function (req, res) {
+    async function (
+        req,
+        res
+    ) {
 
         try {
 
@@ -1314,16 +2255,13 @@ app.post(
                 );
 
 
-            if (
-                !code
-            ) {
+            if (!code) {
 
                 return res
                     .status(400)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "Code não informado."
@@ -1331,11 +2269,6 @@ app.post(
                     });
 
             }
-
-
-            console.log(
-                "Trocando code por token..."
-            );
 
 
             const dados =
@@ -1347,13 +2280,11 @@ app.post(
                 "authorization_code"
             );
 
-
             dados.append(
                 "client_id",
                 process.env
                     .MELHOR_ENVIO_CLIENT_ID
             );
-
 
             dados.append(
                 "client_secret",
@@ -1361,13 +2292,11 @@ app.post(
                     .MELHOR_ENVIO_CLIENT_SECRET
             );
 
-
             dados.append(
                 "redirect_uri",
                 process.env
                     .MELHOR_ENVIO_REDIRECT_URI
             );
-
 
             dados.append(
                 "code",
@@ -1414,16 +2343,10 @@ app.post(
 
                 salvarNoEnv(
                     "MELHOR_ENVIO_REFRESH_TOKEN",
-                    resposta.data
-                        .refresh_token
+                    resposta.data.refresh_token
                 );
 
             }
-
-
-            console.log(
-                "Melhor Envio autorizado."
-            );
 
 
             res.send(`
@@ -1438,11 +2361,7 @@ app.post(
                     "
                 >
 
-                    <h1
-                        style="
-                            color:#ff6900;
-                        "
-                    >
+                    <h1>
                         ✓ Melhor Envio autorizado
                     </h1>
 
@@ -1450,25 +2369,15 @@ app.post(
 
             `);
 
-
         }
 
         catch (erro) {
-
-            console.error(
-                "Erro Melhor Envio:",
-                erro.response?.data
-                ||
-                erro.message
-            );
-
 
             res
                 .status(500)
                 .json({
 
-                    sucesso:
-                        false,
+                    sucesso: false,
 
                     mensagem:
                         "Não foi possível gerar o token.",
@@ -1492,7 +2401,10 @@ app.post(
 
 app.post(
     "/melhor-envio/renovar-token",
-    async function (req, res) {
+    async function (
+        req,
+        res
+    ) {
 
         try {
 
@@ -1501,16 +2413,13 @@ app.post(
                     .MELHOR_ENVIO_REFRESH_TOKEN;
 
 
-            if (
-                !refreshToken
-            ) {
+            if (!refreshToken) {
 
                 return res
                     .status(400)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "Refresh token não encontrado."
@@ -1529,20 +2438,17 @@ app.post(
                 "refresh_token"
             );
 
-
             dados.append(
                 "client_id",
                 process.env
                     .MELHOR_ENVIO_CLIENT_ID
             );
 
-
             dados.append(
                 "client_secret",
                 process.env
                     .MELHOR_ENVIO_CLIENT_SECRET
             );
-
 
             dados.append(
                 "refresh_token",
@@ -1578,28 +2484,24 @@ app.post(
 
 
             if (
-                resposta.data
-                    .access_token
+                resposta.data.access_token
             ) {
 
                 salvarNoEnv(
                     "MELHOR_ENVIO_TOKEN",
-                    resposta.data
-                        .access_token
+                    resposta.data.access_token
                 );
 
             }
 
 
             if (
-                resposta.data
-                    .refresh_token
+                resposta.data.refresh_token
             ) {
 
                 salvarNoEnv(
                     "MELHOR_ENVIO_REFRESH_TOKEN",
-                    resposta.data
-                        .refresh_token
+                    resposta.data.refresh_token
                 );
 
             }
@@ -1607,14 +2509,12 @@ app.post(
 
             res.json({
 
-                sucesso:
-                    true,
+                sucesso: true,
 
                 mensagem:
                     "Token renovado."
 
             });
-
 
         }
 
@@ -1624,8 +2524,7 @@ app.post(
                 .status(500)
                 .json({
 
-                    sucesso:
-                        false,
+                    sucesso: false,
 
                     erro:
                         erro.response?.data
@@ -1646,7 +2545,10 @@ app.post(
 
 app.get(
     "/melhor-envio/servicos",
-    async function (req, res) {
+    async function (
+        req,
+        res
+    ) {
 
         try {
 
@@ -1702,7 +2604,6 @@ app.get(
 
                 });
 
-
         }
 
         catch (erro) {
@@ -1711,8 +2612,7 @@ app.get(
                 .status(500)
                 .json({
 
-                    sucesso:
-                        false,
+                    sucesso: false,
 
                     erro:
                         erro.response?.data
@@ -1733,7 +2633,10 @@ app.get(
 
 app.post(
     "/melhor-envio/cotar",
-    async function (req, res) {
+    async function (
+        req,
+        res
+    ) {
 
         try {
 
@@ -1742,16 +2645,13 @@ app.post(
                     .MELHOR_ENVIO_TOKEN;
 
 
-            if (
-                !token
-            ) {
+            if (!token) {
 
                 return res
                     .status(401)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "Melhor Envio ainda não autorizado."
@@ -1763,9 +2663,7 @@ app.post(
 
             const cepDestino =
                 String(
-                    req.body.cep
-                    ||
-                    ""
+                    req.body.cep || ""
                 )
                     .replace(
                         /\D/g,
@@ -1781,8 +2679,7 @@ app.post(
                     .status(400)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "CEP inválido."
@@ -1810,8 +2707,7 @@ app.post(
                     .status(400)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "Nenhum produto informado."
@@ -1914,7 +2810,6 @@ app.post(
 
                 },
 
-
                 to: {
 
                     postal_code:
@@ -1922,19 +2817,11 @@ app.post(
 
                 },
 
-
                 products:
                     produtos,
 
-
-                /*
-                   IMPORTANTE:
-                   FORÇA PAC + SEDEX + JADLOG
-                */
-
                 services:
                     SERVICOS_MELHOR_ENVIO,
-
 
                 options: {
 
@@ -1950,42 +2837,6 @@ app.post(
                 }
 
             };
-
-
-            console.log("");
-            console.log("==================================");
-            console.log("DIAGNÓSTICO MELHOR ENVIO");
-            console.log("==================================");
-
-
-            console.log(
-                "Calculando frete:"
-            );
-
-
-            console.log(
-                `${pegarCepOrigem()} -> ${cepDestino}`
-            );
-
-
-            console.log(
-                "Serviços solicitados:",
-                SERVICOS_MELHOR_ENVIO
-            );
-
-
-            console.log(
-                "Payload enviado:"
-            );
-
-
-            console.dir(
-                payload,
-                {
-                    depth:
-                        null
-                }
-            );
 
 
             const resposta =
@@ -2021,31 +2872,6 @@ app.post(
                 );
 
 
-            console.log(
-                "STATUS MELHOR ENVIO:",
-                resposta.status
-            );
-
-
-            console.log(
-                "RESPOSTA MELHOR ENVIO:"
-            );
-
-
-            console.dir(
-                resposta.data,
-                {
-                    depth:
-                        null
-                }
-            );
-
-
-            console.log(
-                "=================================="
-            );
-
-
             if (
                 resposta.status < 200
                 ||
@@ -2058,8 +2884,7 @@ app.post(
                     )
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "O Melhor Envio recusou a cotação.",
@@ -2080,40 +2905,6 @@ app.post(
                     resposta.data
                     :
                     [];
-
-
-            const servicosComErro =
-                dados.filter(
-                    function (
-                        item
-                    ) {
-
-                        return Boolean(
-                            item.error
-                        );
-
-                    }
-                );
-
-
-            if (
-                servicosComErro.length > 0
-            ) {
-
-                console.log(
-                    "SERVIÇOS COM ERRO:"
-                );
-
-
-                console.dir(
-                    servicosComErro,
-                    {
-                        depth:
-                            null
-                    }
-                );
-
-            }
 
 
             const cotacoes =
@@ -2142,9 +2933,7 @@ app.post(
                                     item.id,
 
                                 servico:
-                                    item.name
-                                    ||
-                                    "",
+                                    item.name || "",
 
                                 transportadora:
                                     item.company?.name
@@ -2182,21 +2971,6 @@ app.post(
                     );
 
 
-            console.log(
-                "COTAÇÕES VÁLIDAS:",
-                cotacoes.length
-            );
-
-
-            console.dir(
-                cotacoes,
-                {
-                    depth:
-                        null
-                }
-            );
-
-
             if (
                 cotacoes.length === 0
             ) {
@@ -2205,8 +2979,7 @@ app.post(
                     .status(422)
                     .json({
 
-                        sucesso:
-                            false,
+                        sucesso: false,
 
                         mensagem:
                             "Nenhuma opção de frete disponível.",
@@ -2221,8 +2994,7 @@ app.post(
 
             res.json({
 
-                sucesso:
-                    true,
+                sucesso: true,
 
                 origem:
                     pegarCepOrigem(),
@@ -2234,7 +3006,6 @@ app.post(
                     cotacoes
 
             });
-
 
         }
 
@@ -2256,8 +3027,7 @@ app.post(
                 .status(500)
                 .json({
 
-                    sucesso:
-                        false,
+                    sucesso: false,
 
                     mensagem:
                         "Não foi possível calcular o frete.",
@@ -2288,6 +3058,15 @@ app.listen(
 
         console.log(
             `Servidor: http://localhost:${PORT}`
+        );
+
+        console.log(
+            "Supabase:",
+            supabaseConfigurado()
+                ?
+                "CONECTADO"
+                :
+                "NÃO CONFIGURADO"
         );
 
         console.log(
