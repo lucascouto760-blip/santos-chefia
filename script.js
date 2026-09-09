@@ -1,47 +1,37 @@
 /* ==========================================
    SANTOS CHEFIA
    PÁGINA PRINCIPAL
-   PRODUTOS + CATEGORIAS + CARRINHO
+   PRODUTOS ONLINE + CARRINHO
 ========================================== */
 
 
 /* ==========================================
-   CHAVES
+   CONFIGURAÇÕES
 ========================================== */
 
-const CHAVE_PRODUTOS =
-    "santosChefiaProdutos";
+const URL_BACKEND =
+    "https://santos-chefia.onrender.com";
 
 const CHAVE_CARRINHO =
     "santosChefiaCarrinho";
 
 
 /* ==========================================
-   CATEGORIAS OFICIAIS
+   CATEGORIAS
 ========================================== */
 
 const CATEGORIAS_OFICIAIS = [
 
     "Início",
-
     "Inverno",
-
     "Bonés Premium",
-
     "Camisetas Básicas",
-
     "Camisetas Polo",
-
     "Shorts",
-
     "Calça Jeans",
-
     "Joias",
-
     "Perfumes",
-
     "Carteira",
-
     "Cueca"
 
 ];
@@ -87,13 +77,11 @@ function formatarPreco(
         .toLocaleString(
             "pt-BR",
             {
-
                 style:
                     "currency",
 
                 currency:
                     "BRL"
-
             }
         );
 
@@ -113,12 +101,10 @@ function escapeHtml(
             "div"
         );
 
-
     div.textContent =
         String(
             texto ?? ""
         );
-
 
     return div.innerHTML;
 
@@ -126,7 +112,7 @@ function escapeHtml(
 
 
 /* ==========================================
-   NORMALIZAR
+   NORMALIZAR TEXTO
 ========================================== */
 
 function normalizarTexto(
@@ -150,102 +136,144 @@ function normalizarTexto(
 
 
 /* ==========================================
-   CARREGAR PRODUTOS
+   NORMALIZAR PRODUTO
 ========================================== */
 
-function carregarProdutosDoPainel() {
+function normalizarProduto(
+    produto
+) {
 
-    const salvo =
-        localStorage.getItem(
-            CHAVE_PRODUTOS
+    return {
+
+        ...produto,
+
+        id:
+            String(
+                produto.id ?? ""
+            ),
+
+        nome:
+            produto.nome ||
+            "Produto",
+
+        categoria:
+            produto.categoria ||
+            "Início",
+
+        preco:
+            Number(
+                produto.preco
+            ) || 0,
+
+        estoque:
+            Number(
+                produto.estoque
+            ) || 0,
+
+        tamanhos:
+            Array.isArray(
+                produto.tamanhos
+            )
+                ?
+                produto.tamanhos.map(
+                    String
+                )
+                :
+                [],
+
+        imagem:
+            produto.imagem ||
+            "",
+
+        frete:
+            produto.frete
+            ||
+            {
+                peso: 0.5,
+                comprimento: 30,
+                largura: 20,
+                altura: 10
+            }
+
+    };
+
+}
+
+
+/* ==========================================
+   CARREGAR PRODUTOS ONLINE
+========================================== */
+
+async function carregarProdutosOnline() {
+
+    const lista =
+        document.getElementById(
+            "listaProdutos"
         );
 
 
-    if (!salvo) {
+    if (lista) {
 
-        produtos =
-            [];
+        lista.innerHTML = `
 
-        return;
+            <div class="nenhum-produto">
+
+                <span>
+                    ⏳
+                </span>
+
+                <h3>
+                    Carregando produtos...
+                </h3>
+
+            </div>
+
+        `;
 
     }
 
 
     try {
 
-        const dados =
-            JSON.parse(
-                salvo
+        const resposta =
+            await fetch(
+                `${URL_BACKEND}/produtos`
             );
 
 
+        const dados =
+            await resposta.json();
+
+
         if (
-            !Array.isArray(
-                dados
-            )
+            !resposta.ok
+            ||
+            !dados.sucesso
         ) {
 
-            produtos =
-                [];
-
-            return;
+            throw new Error(
+                dados.mensagem ||
+                "Não foi possível carregar os produtos."
+            );
 
         }
 
 
         produtos =
-            dados.map(
-                function (
-                    produto
-                ) {
+            Array.isArray(
+                dados.produtos
+            )
+                ?
+                dados.produtos.map(
+                    normalizarProduto
+                )
+                :
+                [];
 
-                    return {
 
-                        ...produto,
+        mostrarProdutos();
 
-                        id:
-                            String(
-                                produto.id ?? ""
-                            ),
-
-                        nome:
-                            produto.nome ||
-                            "Produto",
-
-                        categoria:
-                            produto.categoria ||
-                            "Início",
-
-                        preco:
-                            Number(
-                                produto.preco
-                            ) || 0,
-
-                        estoque:
-                            Number(
-                                produto.estoque
-                            ) || 0,
-
-                        tamanhos:
-                            Array.isArray(
-                                produto.tamanhos
-                            )
-                                ?
-                                produto.tamanhos.map(
-                                    String
-                                )
-                                :
-                                [],
-
-                        imagem:
-                            produto.imagem ||
-                            ""
-
-                    };
-
-                }
-            );
-
+        renderizarCarrinho();
 
     }
 
@@ -259,6 +287,31 @@ function carregarProdutosDoPainel() {
 
         produtos =
             [];
+
+
+        if (lista) {
+
+            lista.innerHTML = `
+
+                <div class="nenhum-produto">
+
+                    <span>
+                        ⚠️
+                    </span>
+
+                    <h3>
+                        Não foi possível carregar os produtos
+                    </h3>
+
+                    <p>
+                        Tente atualizar a página em alguns segundos.
+                    </p>
+
+                </div>
+
+            `;
+
+        }
 
     }
 
@@ -299,10 +352,6 @@ function obterProdutosFiltrados() {
             let bateCategoria =
                 true;
 
-
-            /*
-               INÍCIO FUNCIONA COMO "TODOS"
-            */
 
             if (
                 categoriaSelecionada !==
@@ -354,21 +403,12 @@ function atualizarContadorResultados(
     }
 
 
-    if (
+    elemento.textContent =
         quantidade === 1
-    ) {
-
-        elemento.textContent =
-            "1 produto";
-
-    }
-
-    else {
-
-        elemento.textContent =
+            ?
+            "1 produto"
+            :
             `${quantidade} produtos`;
-
-    }
 
 }
 
@@ -422,14 +462,12 @@ function mostrarProdutos() {
                 </h3>
 
                 <p>
-                    Cadastre produtos no painel administrativo
-                    para eles aparecerem aqui.
+                    Novos produtos aparecerão aqui em breve.
                 </p>
 
             </div>
 
         `;
-
 
         return;
 
@@ -461,7 +499,6 @@ function mostrarProdutos() {
 
         `;
 
-
         return;
 
     }
@@ -483,7 +520,9 @@ function mostrarProdutos() {
 
 
             const esgotado =
-                produto.estoque <= 0;
+                Number(
+                    produto.estoque
+                ) <= 0;
 
 
             let imagemHtml =
@@ -522,9 +561,7 @@ function mostrarProdutos() {
                             color:#555;
                         "
                     >
-
                         👕
-
                     </div>
 
                 `;
@@ -538,32 +575,27 @@ function mostrarProdutos() {
 
                     ${imagemHtml}
 
-
                     ${
                         esgotado
                             ?
                             `
-
-                            <span
-                                style="
-                                    position:absolute;
-                                    right:14px;
-                                    top:14px;
-                                    z-index:3;
-                                    padding:7px 10px;
-                                    background:#080808;
-                                    border:1px solid #8f2e2e;
-                                    color:#ff7777;
-                                    font-size:9px;
-                                    font-weight:800;
-                                    letter-spacing:1px;
-                                "
-                            >
-
-                                ESGOTADO
-
-                            </span>
-
+                                <span
+                                    style="
+                                        position:absolute;
+                                        right:14px;
+                                        top:14px;
+                                        z-index:3;
+                                        padding:7px 10px;
+                                        background:#080808;
+                                        border:1px solid #8f2e2e;
+                                        color:#ff7777;
+                                        font-size:9px;
+                                        font-weight:800;
+                                        letter-spacing:1px;
+                                    "
+                                >
+                                    ESGOTADO
+                                </span>
                             `
                             :
                             ""
@@ -573,7 +605,6 @@ function mostrarProdutos() {
 
 
                 <div class="produto-info">
-
 
                     <div class="produto-categoria">
 
@@ -604,7 +635,6 @@ function mostrarProdutos() {
 
                     <div class="produto-acoes">
 
-
                         <button
                             type="button"
                             class="btn-produto"
@@ -627,9 +657,7 @@ function mostrarProdutos() {
 
                         </button>
 
-
                     </div>
-
 
                 </div>
 
@@ -683,12 +711,10 @@ function configurarPesquisa() {
             "pesquisaProdutos"
         );
 
-
     const limpar =
         document.getElementById(
             "limparPesquisa"
         );
-
 
     const abrir =
         document.getElementById(
@@ -774,13 +800,11 @@ function configurarPesquisa() {
 
                     secao.scrollIntoView(
                         {
-
                             behavior:
                                 "smooth",
 
                             block:
                                 "start"
-
                         }
                     );
 
@@ -866,13 +890,11 @@ function configurarCategorias() {
 
                         lista.scrollIntoView(
                             {
-
                                 behavior:
                                     "smooth",
 
                                 block:
                                     "start"
-
                             }
                         );
 
@@ -906,7 +928,9 @@ function abrirProduto(
                         item.id
                     )
                     ===
-                    String(id)
+                    String(
+                        id
+                    )
                 );
 
             }
@@ -921,7 +945,9 @@ function abrirProduto(
 
 
     if (
-        produto.estoque <= 0
+        Number(
+            produto.estoque
+        ) <= 0
     ) {
 
         alert(
@@ -936,10 +962,8 @@ function abrirProduto(
     produtoSelecionado =
         produto;
 
-
     tamanhoSelecionado =
         null;
-
 
     quantidadeProduto =
         1;
@@ -963,36 +987,30 @@ function abrirProduto(
             "modalImagemProduto"
         );
 
-
     const nome =
         document.getElementById(
             "modalNomeProduto"
         );
-
 
     const categoria =
         document.getElementById(
             "modalCategoria"
         );
 
-
     const preco =
         document.getElementById(
             "modalPrecoProduto"
         );
-
 
     const tamanhoTexto =
         document.getElementById(
             "tamanhoSelecionado"
         );
 
-
     const quantidade =
         document.getElementById(
             "quantidadeProduto"
         );
-
 
     const botaoAdicionar =
         document.getElementById(
@@ -1054,11 +1072,6 @@ function abrirProduto(
     }
 
 
-    /*
-       MOSTRAR APENAS TAMANHOS
-       CADASTRADOS NO PAINEL
-    */
-
     document
         .querySelectorAll(
             ".tamanho-btn"
@@ -1096,11 +1109,6 @@ function abrirProduto(
         );
 
 
-    /*
-       SE TIVER APENAS UM TAMANHO,
-       SELECIONA AUTOMATICAMENTE.
-    */
-
     if (
         produto.tamanhos.length === 1
     ) {
@@ -1118,7 +1126,6 @@ function abrirProduto(
 
         botaoAdicionar.disabled =
             false;
-
 
         botaoAdicionar.textContent =
             "ADICIONAR AO CARRINHO";
@@ -1228,30 +1235,28 @@ function selecionarTamanho(
         );
 
 
-    const botoes =
-        document.querySelectorAll(
+    document
+        .querySelectorAll(
             ".tamanho-btn"
-        );
-
-
-    botoes.forEach(
-        function (
-            botao
-        ) {
-
-            if (
-                botao.dataset.tamanho ===
-                tamanho
+        )
+        .forEach(
+            function (
+                botao
             ) {
 
-                botao.classList.add(
-                    "selecionado"
-                );
+                if (
+                    botao.dataset.tamanho ===
+                    tamanho
+                ) {
+
+                    botao.classList.add(
+                        "selecionado"
+                    );
+
+                }
 
             }
-
-        }
-    );
+        );
 
 }
 
@@ -1299,7 +1304,6 @@ function configurarQuantidade() {
             "diminuirQuantidade"
         );
 
-
     const aumentar =
         document.getElementById(
             "aumentarQuantidade"
@@ -1345,7 +1349,9 @@ function configurarQuantidade() {
 
                 if (
                     quantidadeProduto <
-                    produtoSelecionado.estoque
+                    Number(
+                        produtoSelecionado.estoque
+                    )
                 ) {
 
                     quantidadeProduto++;
@@ -1407,11 +1413,6 @@ function adicionarProdutoAoCarrinho() {
     }
 
 
-    /*
-       SE O PRODUTO POSSUI TAMANHOS,
-       É OBRIGATÓRIO ESCOLHER.
-    */
-
     if (
         produtoSelecionado.tamanhos.length > 0
         &&
@@ -1467,7 +1468,9 @@ function adicionarProdutoAoCarrinho() {
 
         if (
             novaQuantidade >
-            produtoSelecionado.estoque
+            Number(
+                produtoSelecionado.estoque
+            )
         ) {
 
             alert(
@@ -1517,19 +1520,10 @@ function adicionarProdutoAoCarrinho() {
                 produtoSelecionado.frete
                 ||
                 {
-
-                    peso:
-                        0.5,
-
-                    comprimento:
-                        30,
-
-                    largura:
-                        20,
-
-                    altura:
-                        10
-
+                    peso: 0.5,
+                    comprimento: 30,
+                    largura: 20,
+                    altura: 10
                 }
 
         });
@@ -1632,12 +1626,10 @@ function renderizarCarrinho() {
             "itensCarrinho"
         );
 
-
     const contador =
         document.getElementById(
             "contadorCarrinho"
         );
-
 
     const total =
         document.getElementById(
@@ -1730,7 +1722,6 @@ function renderizarCarrinho() {
 
         `;
 
-
         return;
 
     }
@@ -1748,21 +1739,18 @@ function renderizarCarrinho() {
 
                         <div class="cart-item">
 
-
                             <div class="cart-item-imagem">
 
                                 ${
                                     item.imagem
                                         ?
                                         `
-
-                                        <img
-                                            src="${item.imagem}"
-                                            alt="${escapeHtml(
-                                                item.nome
-                                            )}"
-                                        >
-
+                                            <img
+                                                src="${item.imagem}"
+                                                alt="${escapeHtml(
+                                                    item.nome
+                                                )}"
+                                            >
                                         `
                                         :
                                         "👕"
@@ -1772,7 +1760,6 @@ function renderizarCarrinho() {
 
 
                             <div class="cart-item-info">
-
 
                                 <strong>
 
@@ -1789,11 +1776,7 @@ function renderizarCarrinho() {
                                         item.tamanho
                                             ?
                                             `Tam. ${escapeHtml(
-                                                item.tamanho === "Único"
-                                                    ?
-                                                    "Único"
-                                                    :
-                                                    item.tamanho
+                                                item.tamanho
                                             )}`
                                             :
                                             ""
@@ -1812,7 +1795,6 @@ function renderizarCarrinho() {
 
 
                                 <div class="cart-item-quantidade">
-
 
                                     <button
                                         type="button"
@@ -1838,9 +1820,7 @@ function renderizarCarrinho() {
                                         +
                                     </button>
 
-
                                 </div>
-
 
                             </div>
 
@@ -1852,7 +1832,6 @@ function renderizarCarrinho() {
                             >
                                 ×
                             </button>
-
 
                         </div>
 
@@ -1930,7 +1909,9 @@ function alterarQuantidadeCarrinho(
         produto
         &&
         novaQuantidade >
-        produto.estoque
+        Number(
+            produto.estoque
+        )
     ) {
 
         alert(
@@ -1954,7 +1935,7 @@ function alterarQuantidadeCarrinho(
 
 
 /* ==========================================
-   REMOVER DO CARRINHO
+   REMOVER CARRINHO
 ========================================== */
 
 function removerCarrinho(
@@ -2031,18 +2012,15 @@ function configurarCarrinho() {
             "abrirCarrinho"
         );
 
-
     const fechar =
         document.getElementById(
             "fecharCarrinho"
         );
 
-
     const overlay =
         document.getElementById(
             "cartOverlay"
         );
-
 
     const finalizar =
         document.getElementById(
@@ -2134,12 +2112,10 @@ function configurarModalProduto() {
             "produtoModal"
         );
 
-
     const fechar =
         document.getElementById(
             "fecharProdutoModal"
         );
-
 
     const adicionar =
         document.getElementById(
@@ -2193,39 +2169,20 @@ function configurarModalProduto() {
 
 
 /* ==========================================
-   ATUALIZAR ENTRE ABAS
+   ATUALIZAR CATÁLOGO
 ========================================== */
 
-function configurarAtualizacaoEntreAbas() {
+function configurarAtualizacaoProdutos() {
 
-    window.addEventListener(
-        "storage",
-        function (
-            event
-        ) {
+    document.addEventListener(
+        "visibilitychange",
+        function () {
 
             if (
-                event.key ===
-                CHAVE_PRODUTOS
+                !document.hidden
             ) {
 
-                carregarProdutosDoPainel();
-
-                mostrarProdutos();
-
-                renderizarCarrinho();
-
-            }
-
-
-            if (
-                event.key ===
-                CHAVE_CARRINHO
-            ) {
-
-                carregarCarrinho();
-
-                renderizarCarrinho();
+                carregarProdutosOnline();
 
             }
 
@@ -2270,9 +2227,7 @@ function configurarTeclaEsc() {
 
 document.addEventListener(
     "DOMContentLoaded",
-    function () {
-
-        carregarProdutosDoPainel();
+    async function () {
 
         carregarCarrinho();
 
@@ -2288,13 +2243,13 @@ document.addEventListener(
 
         configurarModalProduto();
 
-        configurarAtualizacaoEntreAbas();
+        configurarAtualizacaoProdutos();
 
         configurarTeclaEsc();
 
-        mostrarProdutos();
-
         renderizarCarrinho();
+
+        await carregarProdutosOnline();
 
     }
 );

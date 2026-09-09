@@ -25,6 +25,9 @@ const CHAVE_PRODUTOS =
 const CHAVE_PEDIDOS =
     "santosChefiaPedidos";
 
+const URL_BACKEND =
+    "https://santos-chefia.onrender.com";
+
 
 /* ==========================================
    CATEGORIAS OFICIAIS
@@ -584,100 +587,74 @@ function iniciarProdutos() {
             "novoProduto"
         );
 
-
     const fecharModal =
         document.getElementById(
             "fecharModalProduto"
         );
-
 
     const modal =
         document.getElementById(
             "modalProduto"
         );
 
-
     const form =
         document.getElementById(
             "formProduto"
         );
-
 
     const imagemInput =
         document.getElementById(
             "produtoImagem"
         );
 
-
     if (!modal) {
-
         return;
-
     }
 
-
     if (novoProduto) {
-
         novoProduto.addEventListener(
             "click",
             abrirModalNovoProduto
         );
-
     }
 
-
     if (fecharModal) {
-
         fecharModal.addEventListener(
             "click",
             fecharModalProduto
         );
-
     }
-
 
     modal.addEventListener(
         "click",
         function (event) {
-
-            if (
-                event.target ===
-                modal
-            ) {
-
+            if (event.target === modal) {
                 fecharModalProduto();
-
             }
-
         }
     );
 
-
     if (form) {
-
         form.addEventListener(
             "submit",
             salvarProduto
         );
-
     }
 
-
     if (imagemInput) {
-
         imagemInput.addEventListener(
             "change",
             carregarImagemProduto
         );
-
     }
-
 
     aplicarDimensoesNosProdutosAntigos();
 
     migrarCategoriasAntigas();
 
     renderizarProdutosAdmin();
+
+    carregarProdutosOnline();
 
 }
 
@@ -1020,7 +997,7 @@ function atualizarPreviewImagem(
 
 
 /* ==========================================
-   PEGAR PRODUTOS
+   PEGAR PRODUTOS - CACHE LOCAL
 ========================================== */
 
 function pegarProdutos() {
@@ -1030,13 +1007,11 @@ function pegarProdutos() {
             CHAVE_PRODUTOS
         );
 
-
     if (!salvo) {
 
         return [];
 
     }
-
 
     try {
 
@@ -1044,7 +1019,6 @@ function pegarProdutos() {
             JSON.parse(
                 salvo
             );
-
 
         return Array.isArray(
             dados
@@ -1054,16 +1028,14 @@ function pegarProdutos() {
             :
             [];
 
-
     }
 
     catch (erro) {
 
         console.error(
-            "Erro ao carregar produtos:",
+            "Erro ao carregar produtos do cache:",
             erro
         );
-
 
         return [];
 
@@ -1073,7 +1045,7 @@ function pegarProdutos() {
 
 
 /* ==========================================
-   SALVAR LISTA
+   SALVAR CACHE LOCAL
 ========================================== */
 
 function salvarListaProdutos(
@@ -1091,10 +1063,86 @@ function salvarListaProdutos(
 
 
 /* ==========================================
-   SALVAR PRODUTO
+   CARREGAR PRODUTOS ONLINE
 ========================================== */
 
-function salvarProduto(
+async function carregarProdutosOnline() {
+
+    try {
+
+        const resposta =
+            await fetch(
+                `${URL_BACKEND}/produtos`
+            );
+
+
+        const dados =
+            await resposta.json();
+
+
+        if (
+            !resposta.ok
+            ||
+            !dados.sucesso
+        ) {
+
+            throw new Error(
+                dados.mensagem ||
+                "Não foi possível carregar os produtos."
+            );
+
+        }
+
+
+        const produtos =
+            Array.isArray(
+                dados.produtos
+            )
+                ?
+                dados.produtos
+                :
+                [];
+
+
+        salvarListaProdutos(
+            produtos
+        );
+
+
+        renderizarProdutosAdmin();
+
+        atualizarDashboard();
+
+
+        return produtos;
+
+    }
+
+    catch (erro) {
+
+        console.error(
+            "Erro ao carregar produtos online:",
+            erro
+        );
+
+
+        renderizarProdutosAdmin();
+
+        atualizarDashboard();
+
+
+        return pegarProdutos();
+
+    }
+
+}
+
+
+/* ==========================================
+   SALVAR PRODUTO ONLINE
+========================================== */
+
+async function salvarProduto(
     event
 ) {
 
@@ -1234,115 +1282,169 @@ function salvarProduto(
     }
 
 
-    let produtos =
-        pegarProdutos();
+    let imagemFinal =
+        imagemProdutoAtual;
 
 
-    if (id) {
+    if (
+        id
+        &&
+        !imagemFinal
+    ) {
 
-        produtos =
-            produtos.map(
-                function (produto) {
-
-                    if (
-                        String(
-                            produto.id
-                        )
-                        ===
-                        String(id)
+        const produtoAtual =
+            pegarProdutos()
+                .find(
+                    function (
+                        produto
                     ) {
 
-                        return {
-
-                            ...produto,
-
-                            nome:
-                                nome,
-
-                            categoria:
-                                categoria,
-
-                            preco:
-                                preco,
-
-                            estoque:
-                                estoque,
-
-                            tamanhos:
-                                tamanhos,
-
-                            imagem:
-                                imagemProdutoAtual
-                                ||
-                                produto.imagem
-                                ||
-                                "",
-
-                            frete:
-                                produto.frete
-                                ||
-                                {
-                                    ...DIMENSOES_PADRAO_ROUPA
-                                }
-
-                        };
+                        return (
+                            String(
+                                produto.id
+                            )
+                            ===
+                            String(
+                                id
+                            )
+                        );
 
                     }
+                );
 
 
-                    return produto;
-
-                }
-            );
+        imagemFinal =
+            produtoAtual?.imagem
+            ||
+            "";
 
     }
 
-    else {
 
-        produtos.push({
+    const produto = {
 
-            id:
-                String(
-                    Date.now()
-                ),
+        nome:
+            nome,
 
-            nome:
-                nome,
+        categoria:
+            categoria,
 
-            categoria:
-                categoria,
+        preco:
+            preco,
 
-            preco:
-                preco,
+        estoque:
+            estoque,
 
-            estoque:
-                estoque,
+        tamanhos:
+            tamanhos,
 
-            tamanhos:
-                tamanhos,
+        imagem:
+            imagemFinal,
 
-            imagem:
-                imagemProdutoAtual,
+        frete: {
 
-            frete: {
+            ...DIMENSOES_PADRAO_ROUPA
 
-                ...DIMENSOES_PADRAO_ROUPA
+        }
 
-            },
+    };
 
-            criadoEm:
-                new Date()
-                    .toISOString()
 
-        });
+    const botaoSalvar =
+        document.querySelector(
+            '#formProduto button[type="submit"]'
+        );
+
+
+    const textoOriginal =
+        botaoSalvar?.textContent
+        ||
+        "Salvar";
+
+
+    if (botaoSalvar) {
+
+        botaoSalvar.disabled =
+            true;
+
+        botaoSalvar.textContent =
+            "SALVANDO...";
 
     }
 
 
     try {
 
-        salvarListaProdutos(
-            produtos
+        const url =
+            id
+                ?
+                `${URL_BACKEND}/produtos/${encodeURIComponent(id)}`
+                :
+                `${URL_BACKEND}/produtos`;
+
+
+        const resposta =
+            await fetch(
+                url,
+                {
+
+                    method:
+                        id
+                            ?
+                            "PUT"
+                            :
+                            "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify(
+                            produto
+                        )
+
+                }
+            );
+
+
+        const dados =
+            await resposta.json();
+
+
+        if (
+            !resposta.ok
+            ||
+            !dados.sucesso
+        ) {
+
+            throw new Error(
+                dados.mensagem ||
+                "Não foi possível salvar o produto."
+            );
+
+        }
+
+
+        await carregarProdutosOnline();
+
+
+        fecharModalProduto();
+
+        renderizarProdutosAdmin();
+
+        atualizarDashboard();
+
+
+        alert(
+            id
+                ?
+                "Produto atualizado com sucesso!"
+                :
+                "Produto cadastrado com sucesso!"
         );
 
     }
@@ -1355,29 +1457,25 @@ function salvarProduto(
 
 
         alert(
-            "Não foi possível salvar. A imagem pode estar grande demais."
+            erro.message ||
+            "Não foi possível salvar o produto."
         );
-
-
-        return;
 
     }
 
+    finally {
 
-    fecharModalProduto();
+        if (botaoSalvar) {
 
-    renderizarProdutosAdmin();
+            botaoSalvar.disabled =
+                false;
 
-    atualizarDashboard();
+            botaoSalvar.textContent =
+                textoOriginal;
 
+        }
 
-    alert(
-        id
-            ?
-            "Produto atualizado com sucesso!"
-            :
-            "Produto cadastrado com sucesso!"
-    );
+    }
 
 }
 
@@ -1591,9 +1689,13 @@ function editarProduto(
                 function (item) {
 
                     return (
-                        String(item.id)
+                        String(
+                            item.id
+                        )
                         ===
-                        String(id)
+                        String(
+                            id
+                        )
                     );
 
                 }
@@ -1688,10 +1790,10 @@ function editarProduto(
 
 
 /* ==========================================
-   EXCLUIR PRODUTO
+   EXCLUIR PRODUTO ONLINE
 ========================================== */
 
-function excluirProduto(
+async function excluirProduto(
     id
 ) {
 
@@ -1708,31 +1810,65 @@ function excluirProduto(
     }
 
 
-    const produtos =
-        pegarProdutos()
-            .filter(
-                function (produto) {
+    try {
 
-                    return (
-                        String(
-                            produto.id
-                        )
-                        !==
-                        String(id)
-                    );
+        const resposta =
+            await fetch(
+                `${URL_BACKEND}/produtos/${encodeURIComponent(id)}`,
+                {
+
+                    method:
+                        "DELETE"
 
                 }
             );
 
 
-    salvarListaProdutos(
-        produtos
-    );
+        const dados =
+            await resposta.json();
 
 
-    renderizarProdutosAdmin();
+        if (
+            !resposta.ok
+            ||
+            !dados.sucesso
+        ) {
 
-    atualizarDashboard();
+            throw new Error(
+                dados.mensagem ||
+                "Não foi possível excluir o produto."
+            );
+
+        }
+
+
+        await carregarProdutosOnline();
+
+
+        renderizarProdutosAdmin();
+
+        atualizarDashboard();
+
+
+        alert(
+            "Produto excluído com sucesso!"
+        );
+
+    }
+
+    catch (erro) {
+
+        console.error(
+            erro
+        );
+
+
+        alert(
+            erro.message ||
+            "Não foi possível excluir o produto."
+        );
+
+    }
 
 }
 
@@ -2387,9 +2523,13 @@ function alterarStatusPedido(
             function (item) {
 
                 return (
-                    String(item.id)
+                    String(
+                        item.id
+                    )
                     ===
-                    String(id)
+                    String(
+                        id
+                    )
                 );
 
             }
@@ -2734,9 +2874,13 @@ function excluirPedido(
             function (item) {
 
                 return (
-                    String(item.id)
+                    String(
+                        item.id
+                    )
                     ===
-                    String(id)
+                    String(
+                        id
+                    )
                 );
 
             }
@@ -2788,7 +2932,9 @@ function excluirPedido(
                         item.id
                     )
                     !==
-                    String(id)
+                    String(
+                        id
+                    )
                 );
 
             }
